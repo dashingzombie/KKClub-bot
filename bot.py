@@ -29,7 +29,7 @@ async def on_reaction_add(reaction, user):
             embed = discord.Embed(title = "Leaderboard", color=0x8150bc)
             for row in rows:
                 if(row[1] != None and row[2] != None):
-                    user_name = bot.get_user(int(row[1]))
+                    user_name = user.guild.get_member(int(row[1])).display_name
                     user_name = "#" + str(last_user_count) + " | " + str(user_name)
                     embed.add_field(name = user_name, value = '{:,}'.format(row[2]), inline=False)
                     last_user_count += 1
@@ -55,7 +55,7 @@ async def on_reaction_add(reaction, user):
             
             for row in rows:
                 if(row[1] != None and row[2] != None):
-                    user_name = bot.get_user(int(row[1]))
+                    user_name = user.guild.get_member(int(row[1])).display_name
                     user_name = "#" + str(last_user_count) + " | " + str(user_name)
                     embed.add_field(name = user_name, value = '{:,}'.format(row[2]), inline=False)
                     last_user_count += 1
@@ -170,9 +170,9 @@ async def leaderboard(ctx):
     count = 1
     for row in rows:
         if(row[1] != None and row[2] != None):
-            user = bot.get_user(int(row[1]))
-            user = "#" + str(count) + " | " + str(user)
-            embed.add_field(name = user, value = '{:,}'.format(row[2]), inline=False)
+            user_name = ctx.guild.get_member(int(row[1])).display_name
+            user_name = "#" + str(count) + " | " + str(user_name)
+            embed.add_field(name = user_name, value = '{:,}'.format(row[2]), inline=False)
             count += 1
             
     msg_sent = await ctx.send(embed=embed)
