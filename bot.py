@@ -1,8 +1,9 @@
 import discord
+from discord import app_commands
+from discord.ext import commands
 import database
 import json
 import re
-from discord.ext import commands
 from database import *
 
 bot = commands.Bot(command_prefix="!",intents=discord.Intents.all())
@@ -15,8 +16,53 @@ bot.remove_command("help")
 
 @bot.event
 async def on_ready():
-    print("Bot is running and ready to use!")
-    
+    print("Bot is running")
+    try:
+        synced = await bot.tree.sync()
+        print("Synced Commands: " + str(synced))
+    except Exception as e:
+        print("Booooof Something went wrong")
+
+
+@bot.tree.command(name = "addkklub",
+                  description= "add Kklub")
+@app_commands.describe(username = "Who to add kklub")
+async def addkklub(interaction: discord.Interaction, username:str):
+    username_id = username[2:]
+    username_id = username_id[:-1]
+    username_id = username_id.replace("!", "")
+
+    if (username_id.isdigit()):
+        add_points(username_id, 1)
+    else:
+        from_server = interaction.guild
+        user = from_server.get_member_named(username)
+        if (user == None):
+            await interaction.response.send_message("Invalid User")
+            return
+        else:
+            add_points(user.id, 1)
+    await interaction.response.send_message("kklub added")
+
+@bot.tree.command(name = 'removekklub')
+@app_commands.describe(username = "Who to remove kklub")
+async def removekklub(interaction: discord.Interaction, username:str):
+    point = 1
+    username_id = username[2:]
+    username_id = username_id[:-1]
+    username_id = username_id.replace("!", "")
+    if (username_id.isdigit()):
+        remove_points(username_id, point)
+    else:
+        from_server = interaction.guild
+        user = from_server.get_member_named(username)
+        if (user == None):
+            await interaction.response.send_message("Invalid user")
+            return
+        else:
+            remove_points(user.id, point)
+    await interaction.response.send_message("KKClub removed!")
+
 
 @bot.event
 async def on_reaction_add(reaction, user):
