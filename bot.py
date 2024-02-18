@@ -97,7 +97,8 @@ async def check_leaderboard(interaction: discord.Interaction):
             embed.add_field(name=user, value='{:,}'.format(row[2]), inline=False)
             count += 1
 
-    msg_sent = await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed)
+        msg_sent = interaction
     add_leaderboard(interaction.user.id, msg_sent.id, count)
     if (count == 11):
         await msg_sent.add_reaction(u"\u25B6")
