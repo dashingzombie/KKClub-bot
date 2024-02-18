@@ -24,10 +24,10 @@ async def on_ready():
         print("Booooof Something went wrong")
 
 
-@bot.tree.command(name = "addkklub",
-                  description= "add Kklub")
-@app_commands.describe(username = "Who to add kklub")
-async def addkklub(interaction: discord.Interaction, username:str):
+@bot.tree.command(name = "add_kkclub",
+                  description= "add Kkclub")
+@app_commands.describe(username = "Who to add kkclub")
+async def add_kklub(interaction: discord.Interaction, username:str):
     username_id = username[2:]
     username_id = username_id[:-1]
     username_id = username_id.replace("!", "")
@@ -42,11 +42,12 @@ async def addkklub(interaction: discord.Interaction, username:str):
             return
         else:
             add_points(user.id, 1)
-    await interaction.response.send_message("kklub added")
+    await interaction.response.send_message(username + " has retrieved a kkclub")
 
-@bot.tree.command(name = 'removekklub')
-@app_commands.describe(username = "Who to remove kklub")
-async def removekklub(interaction: discord.Interaction, username:str):
+
+@bot.tree.command(name = 'remove_kkclub')
+@app_commands.describe(username = "Who to remove kkclub")
+async def remove_kkclub(interaction: discord.Interaction, username:str):
     point = 1
     username_id = username[2:]
     username_id = username_id[:-1]
@@ -62,6 +63,32 @@ async def removekklub(interaction: discord.Interaction, username:str):
         else:
             remove_points(user.id, point)
     await interaction.response.send_message("KKClub removed!")
+
+@bot.tree.command(name = "check_kkclubs",
+                  description= "Check how many kkclubs you have")
+async def check_kkclub(interaction: discord.Interaction):
+    points = get_user_point(interaction.user.id)
+    await interaction.response.send_message("You have " + str(points) + " KKclub(s)")
+    return
+
+@bot.tree.command(name = "check_leaderboard", description= "kkclub ranking (you don't want to be on this)")
+async def check_leaderboard(interaction:discord.Interaction):
+    rows = get_users(1)
+    embed = discord.Embed(title="Leaderboard", color=0x8150bc)
+    count = 1
+    for row in rows:
+        if (row[1] != None and row[2] != None):
+            user = bot.get_user(int(row[1]))
+            user = "#" + str(count) + " | " + str(user)
+            embed.add_field(name=user, value='{:,}'.format(row[2]), inline=False)
+            count += 1
+
+    msg_sent = await interaction.response.send_message(embed=embed)
+    add_leaderboard(interaction.user.id, msg_sent.id, count)
+    if (count == 11):
+        await msg_sent.add_reaction(u"\u25B6")
+
+
 
 
 @bot.event
