@@ -42,10 +42,10 @@ async def add_kklub(interaction: discord.Interaction, username: str):
             return
         else:
             add_points(user.id, 1)
-    await interaction.response.send_message(username + " has retrieved a kkclub")
+    await interaction.response.send_message(username + " has received a kklub")
 
 
-@bot.tree.command(name='remove_kklub')
+@bot.tree.command(name='remove_kklub', description= "remove kklub from someone")
 @app_commands.describe(username="Who to remove kklub")
 async def remove_kklub(interaction: discord.Interaction, username: str):
     roles = interaction.user.roles
@@ -97,8 +97,8 @@ async def check_leaderboard(interaction: discord.Interaction):
             embed.add_field(name=user, value='{:,}'.format(row[2]), inline=False)
             count += 1
 
-        await interaction.response.send_message(embed=embed)
-        msg_sent = interaction
+    await interaction.response.send_message(embed=embed)
+    msg_sent = interaction
     add_leaderboard(interaction.user.id, msg_sent.id, count)
     if (count == 11):
         await msg_sent.add_reaction(u"\u25B6")
@@ -108,13 +108,15 @@ async def check_leaderboard(interaction: discord.Interaction):
                   description="if you need help")
 async def help(interaction: discord.Interaction):
     embed = discord.Embed(title="Help command list", color=0x8150bc)
-    embed.add_field(name="!leaderboard", value=config["leaderboard_help"], inline=False)
-    embed.add_field(name="!kkclubs", value=config["points_help"], inline=False)
-    embed.add_field(name="!help", value=config["help_help"], inline=False)
-    await interaction.command.send_message(embed=embed)
+    embed.add_field(name="/check_leaderboard", value=config["leaderboard_help"], inline=False)
+    embed.add_field(name="/add_kklubs", value=config["add_kklub"], inline=False)
+    embed.add_field(name="/remove_kklubs", value=config["remove_kklub"], inline=False)
+    embed.add_field(name="/check_kklub", value=config["check_kklub"], inline=False)
+    embed.add_field(name="/help", value=config["help_help"], inline=False)
+    await interaction.response.send_message(embed=embed)
 
 
-@bot.tree.command(name="reset_kklub",
+@bot.tree.command(name="reset",
                   description="Check how many kklubs you have")
 async def reset(interaction: discord.Interaction):
     permission = False
