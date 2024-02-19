@@ -25,7 +25,7 @@ async def on_ready():
 
 
 @bot.tree.command(name="add_kklub",
-                  description="add Kklub")
+                  description="It's in the name")
 @app_commands.describe(username="Who to add kklub")
 async def add_kklub(interaction: discord.Interaction, username: str):
     username_id = username[2:]
@@ -110,12 +110,12 @@ async def check_leaderboard(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="help",
-                  description="if you need help")
+                  description="If you need help")
 async def help(interaction: discord.Interaction):
     embed = discord.Embed(title="Help command list", color=0x8150bc)
     embed.add_field(name="/check_leaderboard", value=config["leaderboard_help"], inline=False)
-    embed.add_field(name="/add_kklubs", value=config["add_kklub"], inline=False)
-    embed.add_field(name="/remove_kklubs", value=config["remove_kklub"], inline=False)
+    embed.add_field(name="/add_kklubs <username>", value=config["add_kklub"], inline=False)
+    embed.add_field(name="/remove_kklubs <username>", value=config["remove_kklub"], inline=False)
     embed.add_field(name="/check_kklub", value=config["check_kklub"], inline=False)
     embed.add_field(name="/help", value=config["help_help"], inline=False)
     await interaction.response.send_message(embed=embed)
