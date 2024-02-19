@@ -24,7 +24,7 @@ Returns number of kklubs for invoker of command
 /check_kklub
 ```
   
-will show all players using an embedded table and reaction page changer.```
+will show all players using an embedded table and reaction page changer.
 
 ```
 /check_leaderboard
