@@ -1,37 +1,40 @@
 # Configuring
-You just need to place the bot_token in config.json file.
+You just need to place the bot_token in the config.json file.
 
 # Commands
 ## Basics
-There are 3 available commands that this bot can understand:
+There are five available commands that this bot can understand:
 ```
-!points [add/remove] <User/UserList> <points>
-!leaderboard
-!reset
+/add_kklub <username>
+/remove_kklub <username>  //Needs Administrator Privileges
+  removes a kklub for username
+/check_kklub
+  returns number of kklubs for invoker of commands
+  
+/check_leaderboard
+  will show all players using an embedded table, and reaction page changer.
+/reset //Needs Administrator Privileges
 ```
+Adds a kklub to a user
+```
+  /add_kklub <username>
+```
+removes a kklub for a user
+```
+ /remove_kklub <username>  //Needs Administrator Privileges
+```
+Returns number of kklubs for invoker of command
+```
+/check_kklub
+```
+  
+will show all players using an embedded table and reaction page changer.```
 
-## Example:
-The following command will add 90 points for every gived users, you must separate them using comma.
-The points will be gived just if the user is admin or has "Manager" role, otherwise, an approval will be needed using :thumbsup:  reaction.
 ```
-!points add @Name, "Name with space#4132", name_without_space#1513 90
-```
-
-The following command will remove 90 points from the user. This command doesn't work with multiple users!
-The points will be removed just if the user is admin or has "Manager" role, otherwise, an approval will be needed using :thumbsup:  reaction.
+/check_leaderboard
 
 ```
-!points remove 90
-```
-
-The following command will show all players using an embeded table, and reaction page changer
-
-```
-!leaderboard
-```
-
 The following command will reset the database:
-
 ```
-!reset
+/reset
 ```
