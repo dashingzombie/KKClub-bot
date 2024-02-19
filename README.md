@@ -7,12 +7,8 @@ There are five available commands that this bot can understand:
 ```
 /add_kklub <username>
 /remove_kklub <username>  //Needs Administrator Privileges
-  removes a kklub for username
 /check_kklub
-  returns number of kklubs for invoker of commands
-  
 /check_leaderboard
-  will show all players using an embedded table, and reaction page changer.
 /reset //Needs Administrator Privileges
 ```
 Adds a kklub to a user
