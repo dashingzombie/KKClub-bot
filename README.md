@@ -28,7 +28,6 @@ will show all players using an embedded table and reaction page changer.```
 
 ```
 /check_leaderboard
-
 ```
 The following command will reset the database:
 ```
