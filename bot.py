@@ -147,8 +147,9 @@ async def on_reaction_add(reaction, user):
             rows = get_users(page + 1)
             embed = discord.Embed(title="Leaderboard", color=0x8150bc)
             for row in rows:
-                if (row[1] != None and row[2] != None):
-                    user_name = bot.get_user(int(row[1]))
+
+                if(row[1] != None and row[2] != None):
+                    user_name = user.guild.get_member(int(row[1])).display_name
                     user_name = "#" + str(last_user_count) + " | " + str(user_name)
                     embed.add_field(name=user_name, value='{:,}'.format(row[2]), inline=False)
                     last_user_count += 1
@@ -172,8 +173,9 @@ async def on_reaction_add(reaction, user):
                 last_user_count -= 20
 
             for row in rows:
-                if (row[1] != None and row[2] != None):
-                    user_name = bot.get_user(int(row[1]))
+
+                if(row[1] != None and row[2] != None):
+                    user_name = user.guild.get_member(int(row[1])).display_name
                     user_name = "#" + str(last_user_count) + " | " + str(user_name)
                     embed.add_field(name=user_name, value='{:,}'.format(row[2]), inline=False)
                     last_user_count += 1
@@ -278,6 +280,7 @@ async def on_reaction_add(reaction, user):
 #     await ctx.send(embed = embed)
 
 
+
 # @bot.command(pass_context = True)
 # async def leaderboard(ctx):
 #     rows = get_users(1)
@@ -295,6 +298,7 @@ async def on_reaction_add(reaction, user):
 #     if(count == 11):
 #         await msg_sent.add_reaction(u"\u25B6")
 #
+
 
 
 @bot.event
@@ -412,7 +416,9 @@ async def request_points(interaction: discord.Interaction):
         users_req = saved_users.split()
         for user in users_req:
             add_points(user, 1)
+
         await interaction.response.send_message("KKClub added")
+
 
 
 bot.run(config["bot_token"])
