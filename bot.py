@@ -85,15 +85,19 @@ async def check_kklub(interaction: discord.Interaction):
     return
 
 
-@bot.tree.command(name="check_leaderboard", description="kkclub ranking (you don't want to be on this)")
+@bot.tree.command(name="check_leaderboard", description="kklub ranking (you don't want to be on this)")
 async def check_leaderboard(interaction: discord.Interaction):
     rows = get_users(1)
+
     embed = discord.Embed(title="Leaderboard", color=0x8150bc)
     count = 1
 
     for row in rows:
         if (row[1] != None and row[2] != None):
-            user = bot.get_user(int(row[1])).display_name
+            user = bot.get_user(int(row[1]))
+            if user == None:
+                continue
+            user = interaction.guild.get_member(user.id).display_name
             user = "#" + str(count) + " | " + str(user)
             embed.add_field(name=user, value='{:,}'.format(row[2]), inline=False)
             count += 1
