@@ -15,7 +15,7 @@ Adds a kklub to a user
 ```
   /add_kklub <username>
 ```
-removes a kklub for a user
+Removes a kklub for a user
 ```
   /remove_kklub <username>  //Needs Administrator Privileges
 ```
@@ -24,7 +24,7 @@ Returns number of kklubs for invoker of command
   /check_kklub
 ```
   
-will show all players using an embedded table and reaction page changer.
+Will show all players using an embedded table and reaction page changer
 
 ```
   /check_leaderboard
