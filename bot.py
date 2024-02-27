@@ -76,7 +76,7 @@ async def remove_kklub(interaction: discord.Interaction, username: str):
             return
         else:
             remove_points(user.id, point)
-    await interaction.followup.send("KKClub removed from" + str(user) + "!")
+    await interaction.followup.send("KKClub removed from" + str(username) + "!")
 
 
 @bot.tree.command(name="check_kklubs",
