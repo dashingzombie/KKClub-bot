@@ -28,6 +28,7 @@ async def on_ready():
                   description="It's in the name")
 @app_commands.describe(username="Who to add kklub")
 async def add_kklub(interaction: discord.Interaction, username: str):
+    await interaction.response.defer()
     username_id = username[2:]
     username_id = username_id[:-1]
     username_id = username_id.replace("!", "")
@@ -38,16 +39,17 @@ async def add_kklub(interaction: discord.Interaction, username: str):
         from_server = interaction.guild
         user = from_server.get_member_named(username)
         if (user == None):
-            await interaction.response.send_message("Invalid User")
+            await interaction.followup.send("Invalid User")
             return
         else:
             add_points(user.id, 1)
-    await interaction.response.send_message(username + " has received a kklub")
+    await interaction.followup.send(username + " has received a kklub")
 
 
 @bot.tree.command(name='remove_kklub', description= "remove kklub from someone")
 @app_commands.describe(username="Who to remove kklub")
 async def remove_kklub(interaction: discord.Interaction, username: str):
+    await interaction.response.defer()
     roles = interaction.user.roles
     permission = False
     for role in roles:
@@ -57,7 +59,7 @@ async def remove_kklub(interaction: discord.Interaction, username: str):
 
 
     if (not permission):
-        await interaction.response.send_message('No permission')
+        await interaction.followup.send('No permission')
         # await ctx.send("No permission")
         return
     point = 1
@@ -70,23 +72,25 @@ async def remove_kklub(interaction: discord.Interaction, username: str):
         from_server = interaction.guild
         user = from_server.get_member_named(username)
         if (user == None):
-            await interaction.response.send_message("Invalid user")
+            await interaction.followup.send("Invalid user")
             return
         else:
             remove_points(user.id, point)
-    await interaction.response.send_message("KKClub removed!")
+    await interaction.followup.send("KKClub removed from" + str(user) + "!")
 
 
 @bot.tree.command(name="check_kklubs",
                   description="Check how many kklub's you have")
 async def check_kklub(interaction: discord.Interaction):
+    await interaction.response.defer()
     points = get_user_point(interaction.user.id)
-    await interaction.response.send_message("You have " + str(points) + " KKclub(s)")
+    await interaction.followup.send("You have " + str(points) + " KKclub(s)")
     return
 
 
 @bot.tree.command(name="check_leaderboard", description="kklub ranking (you don't want to be on this)")
 async def check_leaderboard(interaction: discord.Interaction):
+    await interaction.response.defer()
     rows = get_users(1)
 
     embed = discord.Embed(title="Leaderboard", color=0x8150bc)
@@ -102,7 +106,7 @@ async def check_leaderboard(interaction: discord.Interaction):
             embed.add_field(name=user, value='{:,}'.format(row[2]), inline=False)
             count += 1
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.followup.send(embed=embed)
     msg_sent = interaction
     add_leaderboard(interaction.user.id, msg_sent.id, count)
     if (count == 11):
@@ -112,18 +116,20 @@ async def check_leaderboard(interaction: discord.Interaction):
 @bot.tree.command(name="help",
                   description="If you need help")
 async def help(interaction: discord.Interaction):
+    await interaction.response.defer()
     embed = discord.Embed(title="Help command list", color=0x8150bc)
     embed.add_field(name="/check_leaderboard", value=config["leaderboard_help"], inline=False)
     embed.add_field(name="/add_kklubs <username>", value=config["add_kklub"], inline=False)
     embed.add_field(name="/remove_kklubs <username>", value=config["remove_kklub"], inline=False)
     embed.add_field(name="/check_kklub", value=config["check_kklub"], inline=False)
     embed.add_field(name="/help", value=config["help_help"], inline=False)
-    await interaction.response.send_message(embed=embed)
+    await interaction.followup.send(embed=embed)
 
 
 @bot.tree.command(name="reset",
                   description="Check how many kklubs you have")
 async def reset(interaction: discord.Interaction):
+    await interaction.response.defer()
     permission = False
     roles = interaction.user.roles
     for role in roles:
@@ -132,9 +138,9 @@ async def reset(interaction: discord.Interaction):
 
     if (permission):
         await reset_database()
-        await interaction.response.send_message("Database was rest!")
+        await interaction.followup.send("Database was rest!")
     else:
-        await interaction.response.send_message("No permision!")
+        await interaction.followup.send("No permision!")
 
 
 @bot.event
@@ -357,7 +363,7 @@ async def request_points(interaction: discord.Interaction):
                 # print(user)
                 user_id = interaction.guild.get_member_named(user)
                 if (user_id == None):
-                    await interaction.response.send_message("The following user does not exist: " + str(
+                    await interaction.followup.send("The following user does not exist: " + str(
                         user) + "\nPlease do not use white spaces between users and commas")
                     return
 
@@ -371,12 +377,12 @@ async def request_points(interaction: discord.Interaction):
                 if (user.isdigit()):
                     found = bot.get_user(int(user))
                 else:
-                    await interaction.response.send_message(
+                    await interaction.followup.send(
                         "The following user does not exist : " + str(user) + "\nPlease use comma between users!")
                     return
 
                 if (found == None):
-                    await interaction.response.send_message(
+                    await interaction.followup.send(
                         "The following user does not exist : " + str(user) + "\nPlease use comma between users!")
                     return
 
@@ -390,13 +396,13 @@ async def request_points(interaction: discord.Interaction):
                 if (user.isdigit()):
                     found = bot.get_user(int(user))
                 else:
-                    await interaction.response.send_message(
+                    await interaction.followup.send(
                         "The following user does not exist : " + str(user) + "\nPlease use comma between users!")
                     return
 
                 found = bot.get_user(user)
                 if (found == None):
-                    await interaction.response.send_message(
+                    await interaction.followup.send(
                         "The following user does not exist : " + str(user) + "\nPlease use comma between users!")
                     return
                 saved_users += str(user)
@@ -405,7 +411,7 @@ async def request_points(interaction: discord.Interaction):
                 # print("Ja")
                 user_id = interaction.guild.get_member_named(user)
                 if (user_id == None):
-                    await interaction.response.send_message("The following user does not exist : " + str(user))
+                    await interaction.followup.send("The following user does not exist : " + str(user))
                     return
                 saved_users += str(user_id.id)
                 saved_users += ' '
@@ -417,7 +423,7 @@ async def request_points(interaction: discord.Interaction):
         for user in users_req:
             add_points(user, 1)
 
-        await interaction.response.send_message("KKClub added")
+        await interaction.followup.send("KKClub added")
 
 
 
