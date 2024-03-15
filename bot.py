@@ -5,6 +5,7 @@ import database
 import json
 import re
 from database import *
+import pindatabase
 
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 
@@ -22,125 +23,314 @@ async def on_ready():
         print("Synced Commands: " + str(synced))
     except Exception as e:
         print("Booooof Something went wrong")
+@bot.command(pass_context = True)
+async def pinReport(ctx, command = None, username =None, point = 1):
+    is_pledge = False
+    roles = ctx.message.author.roles
+    permission = True
 
-
-@bot.tree.command(name="add_kklub",
-                  description="It's in the name")
-@app_commands.describe(username="Who to add kklub")
-async def add_kklub(interaction: discord.Interaction, username: str):
-    await interaction.response.defer()
-    username_id = username[2:]
-    username_id = username_id[:-1]
-    username_id = username_id.replace("!", "")
-
-    if (username_id.isdigit()):
-        add_points(username_id, 1)
-    else:
-        from_server = interaction.guild
-        user = from_server.get_member_named(username)
-        if (user == None):
-            await interaction.followup.send("Invalid User")
-            return
-        else:
-            add_points(user.id, 1)
-    await interaction.followup.send(username + " has received a kklub")
-
-
-@bot.tree.command(name='remove_kklub', description= "remove kklub from someone")
-@app_commands.describe(username="Who to remove kklub")
-async def remove_kklub(interaction: discord.Interaction, username: str):
-    await interaction.response.defer()
-    roles = interaction.user.roles
-    permission = False
     for role in roles:
-        if(role.permissions.administrator):
+        if (role.name == "Manager" or role.permissions.administrator):
             permission = True
-            break
+    for role in roles:
+        if role.name == "Pledges":
+            is_pledge = True
+
+    if (command == None or username == None):
+        if (command == None and username == None):
+            if (is_pledge):
+                points = pindatabase.get_user_point(ctx.message.author.id)
+                await ctx.send("You have " + str(points) + " PinReport(s)")
+                return
+            else:
+                await ctx.send("Ur not a Pledge Nerd")
+                return
+
+    if command.lower() == "add":
+
+        username_id = username[2:]
+        username_id = username_id[:-1]
+        username_id = username_id.replace("!", "")
+
+        if username_id.isdigit():
+            from_server = ctx.guild
+            user = bot.get_user(int(username_id))
+            user = user.name
+            user = from_server.get_member_named(user)
+            for role in user.roles:
+                if role.name == "Pledges":
+                    pindatabase.add_points(username_id, 1)
+        else:
+            from_server = ctx.guild
+            user = from_server.get_member_named(username)
+            if (user == None):
+                await ctx.send("Invalid user")
+                return
+            else:
+                for role in user.roles:
+                    if role.name == "Pledges":
+                        pindatabase.add_points(user.id, 1)
+
+        await ctx.send("Pin Violation Reported")
 
 
-    if (not permission):
-        await interaction.followup.send('No permission')
-        # await ctx.send("No permission")
-        return
-    point = 1
-    username_id = username[2:]
-    username_id = username_id[:-1]
-    username_id = username_id.replace("!", "")
-    if (username_id.isdigit()):
-        remove_points(username_id, point)
-    else:
-        from_server = interaction.guild
-        user = from_server.get_member_named(username)
-        if (user == None):
-            await interaction.followup.send("Invalid user")
+@bot.command(pass_context = True)
+async def kkclub(ctx, command = None, username = None, point = 1):
+    #print(username)
+
+
+    if(command == None or username == None):
+        if(command == None and username == None):
+            points = get_user_point(ctx.message.author.id)
+            await ctx.send("You have " + str(points) + " KKclub(s)")
             return
         else:
-            remove_points(user.id, point)
-    await interaction.followup.send("KKClub removed from " + str(username) + "!")
+            await ctx.send("Invalid command, please check the documentation: \n!kkclub [add/remove] <username> <points>")
+            return
+
+    roles = ctx.message.author.roles
+    permission = True
+
+    for role in roles:
+        if(role.name == "Manager" or role.permissions.administrator):
+            permission = True
+
+    if(not permission):
+        await request_points(ctx)
+        #await ctx.send("No permission")
+        return
+
+    if(command.lower() == "add"):
+
+            username_id = username[2:]
+            username_id = username_id[:-1]
+            username_id = username_id.replace("!","")
 
 
-@bot.tree.command(name="check_kklubs",
-                  description="Check how many kklub's you have")
-async def check_kklub(interaction: discord.Interaction):
-    await interaction.response.defer()
-    points = get_user_point(interaction.user.id)
-    await interaction.followup.send("You have " + str(points) + " KKclub(s)")
-    return
+            if(username_id.isdigit()):
+                add_points(username_id, 1)
+            else:
+                from_server = ctx.guild
+                user = from_server.get_member_named(username)
+                if(user == None):
+                    await ctx.send("Invalid user")
+                    return
+                else:
+                    add_points(user.id, 1)
+            await ctx.send("KKlub added!")
+
+    else:
+        if(command.lower() == "remove"):
+
+                username_id = username[2:]
+                username_id = username_id[:-1]
+                username_id = username_id.replace("!","")
+                if(username_id.isdigit()):
+                    remove_points(username_id, point)
+                else:
+                    from_server = ctx.guild
+                    user = from_server.get_member_named(username)
+                    if(user == None):
+                        await ctx.send("Invalid user")
+                        return
+                    else:
+                        remove_points(user.id,point)
+                await ctx.send("KKClub removed!")
+
+        else:
+            await ctx.send("Invalid command, please check the documentation: \n!points [add/remove] <username> <points>")
 
 
-@bot.tree.command(name="check_leaderboard", description="kklub ranking (you don't want to be on this)")
-async def check_leaderboard(interaction: discord.Interaction):
-    await interaction.response.defer()
-    rows = get_users(1)
 
-    embed = discord.Embed(title="Leaderboard", color=0x8150bc)
+@bot.command(pass_context = True)
+async def help(ctx):
+    embed = discord.Embed(title = "Help command list", color=0x8150bc)
+    embed.add_field(name = "!leaderboard", value = config["leaderboard_help"], inline = False)
+    embed.add_field(name = "!kkclubs", value = config["points_help"], inline = False)
+    embed.add_field(name = "!help", value = config["help_help"], inline = False)
+    await ctx.send(embed = embed)
+@bot.command(pass_context = True)
+async def pinleaderboard(ctx):
+    rows = pindatabase.get_users(1)
+    embed = discord.Embed(title = "Pin Report Leaderboard", color=0x8150bc)
     count = 1
-
     for row in rows:
-        if (row[1] != None and row[2] != None):
+        if(row[1] != None and row[2] != None):
             user = bot.get_user(int(row[1]))
-            if user == None:
-                continue
-            user = interaction.guild.get_member(user.id).display_name
             user = "#" + str(count) + " | " + str(user)
-            embed.add_field(name=user, value='{:,}'.format(row[2]), inline=False)
+            embed.add_field(name = user, value = '{:,}'.format(row[2]), inline=False)
             count += 1
 
-    await interaction.followup.send(embed=embed)
-    msg_sent = interaction
-    add_leaderboard(interaction.user.id, msg_sent.id, count)
-    if (count == 11):
+    msg_sent = await ctx.send(embed=embed)
+    add_leaderboard(ctx.message.author.id, msg_sent.id, count)
+    if(count == 11):
         await msg_sent.add_reaction(u"\u25B6")
 
 
-@bot.tree.command(name="help",
-                  description="If you need help")
-async def help(interaction: discord.Interaction):
-    await interaction.response.defer()
-    embed = discord.Embed(title="Help command list", color=0x8150bc)
-    embed.add_field(name="/check_leaderboard", value=config["leaderboard_help"], inline=False)
-    embed.add_field(name="/add_kklubs <username>", value=config["add_kklub"], inline=False)
-    embed.add_field(name="/remove_kklubs <username>", value=config["remove_kklub"], inline=False)
-    embed.add_field(name="/check_kklub", value=config["check_kklub"], inline=False)
-    embed.add_field(name="/help", value=config["help_help"], inline=False)
-    await interaction.followup.send(embed=embed)
 
+@bot.command(pass_context = True)
+async def leaderboard(ctx):
+    rows = get_users(1)
+    embed = discord.Embed(title = "Kklub Leaderboard", color=0x8150bc)
+    count = 1
+    for row in rows:
+        if(row[1] != None and row[2] != None):
+            user = bot.get_user(int(row[1]))
+            user = "#" + str(count) + " | " + str(user)
+            embed.add_field(name = user, value = '{:,}'.format(row[2]), inline=False)
+            count += 1
 
-@bot.tree.command(name="reset",
-                  description="Check how many kklubs you have")
-async def reset(interaction: discord.Interaction):
-    await interaction.response.defer()
+    msg_sent = await ctx.send(embed=embed)
+    add_leaderboard(ctx.message.author.id, msg_sent.id, count)
+    if(count == 11):
+        await msg_sent.add_reaction(u"\u25B6")
+@bot.command(pass_context = True)
+async def pinreset(ctx):
     permission = False
-    roles = interaction.user.roles
+    roles = ctx.user.roles
     for role in roles:
-        if (role.permissions.administrator):
+        if role.permissions.administrator:
             permission = True
 
     if (permission):
         await reset_database()
-        await interaction.followup.send("Database was rest!")
+        await ctx.send("Database was rest!")
     else:
-        await interaction.followup.send("No permision!")
+        await ctx.send("No permision!")
+
+
+@bot.command(pass_context = True)
+async def reset(ctx):
+    permission = False
+    roles = ctx.user.roles
+    for role in roles:
+        if role.permissions.administrator:
+            permission = True
+
+    if (permission):
+        await reset_database()
+        await ctx.send("Database was rest!")
+    else:
+        await ctx.send("No permision!")
+
+
+# @bot.tree.command(name="add_kklub",
+#                   description="It's in the name")
+# @app_commands.describe(username="Who to add kklub")
+# async def add_kklub(interaction: discord.Interaction, username: str):
+#     await interaction.response.defer()
+#     username_id = username[2:]
+#     username_id = username_id[:-1]
+#     username_id = username_id.replace("!", "")
+#
+#     if (username_id.isdigit()):
+#         add_points(username_id, 1)
+#     else:
+#         from_server = interaction.guild
+#         user = from_server.get_member_named(username)
+#         if (user == None):
+#             await interaction.followup.send("Invalid User")
+#             return
+#         else:
+#             add_points(user.id, 1)
+#     await interaction.followup.send(username + " has received a kklub")
+#
+#
+# @bot.tree.command(name='remove_kklub', description= "remove kklub from someone")
+# @app_commands.describe(username="Who to remove kklub")
+# async def remove_kklub(interaction: discord.Interaction, username: str):
+#     await interaction.response.defer()
+#     roles = interaction.user.roles
+#     permission = False
+#     for role in roles:
+#         if(role.permissions.administrator):
+#             permission = True
+#             break
+#
+#
+#     if (not permission):
+#         await interaction.followup.send('No permission')
+#         # await ctx.send("No permission")
+#         return
+#     point = 1
+#     username_id = username[2:]
+#     username_id = username_id[:-1]
+#     username_id = username_id.replace("!", "")
+#     if (username_id.isdigit()):
+#         remove_points(username_id, point)
+#     else:
+#         from_server = interaction.guild
+#         user = from_server.get_member_named(username)
+#         if (user == None):
+#             await interaction.followup.send("Invalid user")
+#             return
+#         else:
+#             remove_points(user.id, point)
+#     await interaction.followup.send("KKClub removed from " + str(username) + "!")
+#
+#
+# @bot.tree.command(name="check_kklubs",
+#                   description="Check how many kklub's you have")
+# async def check_kklub(interaction: discord.Interaction):
+#     await interaction.response.defer()
+#     points = get_user_point(interaction.user.id)
+#     await interaction.followup.send("You have " + str(points) + " KKclub(s)")
+#     return
+#
+#
+# @bot.tree.command(name="check_leaderboard", description="kklub ranking (you don't want to be on this)")
+# async def check_leaderboard(interaction: discord.Interaction):
+#     await interaction.response.defer()
+#     rows = get_users(1)
+#
+#     embed = discord.Embed(title="Leaderboard", color=0x8150bc)
+#     count = 1
+#
+#     for row in rows:
+#         if (row[1] != None and row[2] != None):
+#             user = bot.get_user(int(row[1]))
+#             if user == None:
+#                 continue
+#             user = interaction.guild.get_member(user.id).display_name
+#             user = "#" + str(count) + " | " + str(user)
+#             embed.add_field(name=user, value='{:,}'.format(row[2]), inline=False)
+#             count += 1
+#
+#     await interaction.followup.send(embed=embed)
+#     msg_sent = interaction
+#     add_leaderboard(interaction.user.id, msg_sent.id, count)
+#     if (count == 11):
+#         await msg_sent.add_reaction(u"\u25B6")
+#
+#
+# @bot.tree.command(name="help",
+#                   description="If you need help")
+# async def help(interaction: discord.Interaction):
+#     await interaction.response.defer()
+#     embed = discord.Embed(title="Help command list", color=0x8150bc)
+#     embed.add_field(name="/check_leaderboard", value=config["leaderboard_help"], inline=False)
+#     embed.add_field(name="/add_kklubs <username>", value=config["add_kklub"], inline=False)
+#     embed.add_field(name="/remove_kklubs <username>", value=config["remove_kklub"], inline=False)
+#     embed.add_field(name="/check_kklub", value=config["check_kklub"], inline=False)
+#     embed.add_field(name="/help", value=config["help_help"], inline=False)
+#     await interaction.followup.send(embed=embed)
+#
+#
+# @bot.tree.command(name="reset",
+#                   description="Check how many kklubs you have")
+# async def reset(interaction: discord.Interaction):
+#     await interaction.response.defer()
+#     permission = False
+#     roles = interaction.user.roles
+#     for role in roles:
+#         if (role.permissions.administrator):
+#             permission = True
+#
+#     if (permission):
+#         await reset_database()
+#         await interaction.followup.send("Database was rest!")
+#     else:
+#         await interaction.followup.send("No permision!")
 
 
 @bot.event
@@ -212,98 +402,6 @@ async def on_reaction_add(reaction, user):
             await reaction.message.add_reaction('\U00002705')
 
 
-# @bot.command(pass_context = True)
-# async def kkclub(ctx, command = None, username = None, point = 1):
-#     #print(username)
-#     if(command == None or username == None):
-#         if(command == None and username == None):
-#             points = get_user_point(ctx.message.author.id)
-#             await ctx.send("You have " + str(points) + " KKclub(s)")
-#             return
-#         else:
-#             await ctx.send("Invalid command, please check the documentation: \n!kkclub [add/remove] <username> <points>")
-#             return
-#
-#     roles = ctx.message.author.roles
-#     permission = True
-#
-#     for role in roles:
-#         if(role.name == "Manager" or role.permissions.administrator):
-#             permission = True
-#
-#     if(not permission):
-#         await request_points(ctx)
-#         #await ctx.send("No permission")
-#         return
-#
-#     if(command.lower() == "add"):
-#
-#             username_id = username[2:]
-#             username_id = username_id[:-1]
-#             username_id = username_id.replace("!","")
-#
-#
-#             if(username_id.isdigit()):
-#                 add_points(username_id, 1)
-#             else:
-#                 from_server = ctx.guild
-#                 user = from_server.get_member_named(username)
-#                 if(user == None):
-#                     await ctx.send("Invalid user")
-#                     return
-#                 else:
-#                     add_points(user.id, 1)
-#             await ctx.send("KKlub added!")
-#
-#     else:
-#         if(command.lower() == "remove"):
-#
-#                 username_id = username[2:]
-#                 username_id = username_id[:-1]
-#                 username_id = username_id.replace("!","")
-#                 if(username_id.isdigit()):
-#                     remove_points(username_id, point)
-#                 else:
-#                     from_server = ctx.guild
-#                     user = from_server.get_member_named(username)
-#                     if(user == None):
-#                         await ctx.send("Invalid user")
-#                         return
-#                     else:
-#                         remove_points(user.id,point)
-#                 await ctx.send("KKClub removed!")
-#
-#         else:
-#             await ctx.send("Invalid command, please check the documentation: \n!points [add/remove] <username> <points>")
-#
-
-# @bot.command(pass_context = True)
-# async def help(ctx):
-#     embed = discord.Embed(title = "Help command list", color=0x8150bc)
-#     embed.add_field(name = "!leaderboard", value = config["leaderboard_help"], inline = False)
-#     embed.add_field(name = "!kkclubs", value = config["points_help"], inline = False)
-#     embed.add_field(name = "!help", value = config["help_help"], inline = False)
-#     await ctx.send(embed = embed)
-
-
-
-# @bot.command(pass_context = True)
-# async def leaderboard(ctx):
-#     rows = get_users(1)
-#     embed = discord.Embed(title = "Leaderboard", color=0x8150bc)
-#     count = 1
-#     for row in rows:
-#         if(row[1] != None and row[2] != None):
-#             user = bot.get_user(int(row[1]))
-#             user = "#" + str(count) + " | " + str(user)
-#             embed.add_field(name = user, value = '{:,}'.format(row[2]), inline=False)
-#             count += 1
-#
-#     msg_sent = await ctx.send(embed=embed)
-#     add_leaderboard(ctx.message.author.id, msg_sent.id, count)
-#     if(count == 11):
-#         await msg_sent.add_reaction(u"\u25B6")
-#
 
 
 
