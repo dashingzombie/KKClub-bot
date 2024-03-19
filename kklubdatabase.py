@@ -3,7 +3,7 @@ from datetime import datetime
 import time
 
 def get_conn():
-    conn = sqlite3.connect('pindiscodatabase.db')
+    conn = sqlite3.connect('kklubdiscodatabase.db')
     cur = conn.cursor()
     return conn, cur
 
