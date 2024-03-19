@@ -165,9 +165,9 @@ async def check_pin_report(interaction: discord.Interaction):
     await interaction.response.defer()
     user = interaction.user
     for role in user.roles:
-        if(role == "pledges"):
+        if(role.name == "Pledges"):
             points = pindatabase.get_user_point(interaction.user.id)
-            await interaction.followup.send("You have " + str(points) + " KKclub(s)")
+            await interaction.followup.send("You have " + str(points) + " Pin Report(s)")
             return
     await interaction.followup.send("Ur not a pledge Nerd")
 
