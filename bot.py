@@ -12,15 +12,18 @@ config = json.load(config_file)
 
 bot.remove_command("help")
 
-
 @bot.event
-async def on_ready():
-    print("Bot is running")
+async def setup_hook():
     try:
         synced = await bot.tree.sync()
         print("Synced Commands: " + str(synced))
     except Exception as e:
         print("Booooof Something went wrong")
+
+@bot.event
+async def on_ready():
+    print("KKlub Bot is running")
+
 
 
 
@@ -272,7 +275,7 @@ async def reset_pin_reports(interaction: discord.Interaction):
 
     if (permission):
         await pindatabase.reset_database()
-        await interaction.followup.send("Database was rest!")
+        await interaction.followup.send("Database was reset!")
     else:
         await interaction.followup.send("No permision!")
 
