@@ -14,6 +14,7 @@ bot.remove_command("help")
 # Set up databases
 pin_database = db.Database('pindiscodatabase.db')
 kklub_database = db.Database('kklubdiscodatabase.db')
+blacklist_database = db.Database('blacklist_database.db')
 
 ##create hooks so bot doesn't forget itself when it idles
 @bot.event
@@ -135,6 +136,10 @@ async def get_user(interaction: discord.Interaction, username: str) -> discord.M
 @app_commands.describe(username="Who to add kklub")
 async def add_kklub(interaction: discord.Interaction, username: str):
     await interaction.response.defer()
+    points = blacklist_database.get_user_point(interaction.user.id)
+    if points > 0:
+        await interaction.followup.send("You are not allowed to kklub someone")
+        return
     await add_row(interaction, username, kklub_database, "KKlub")
 
 @bot.tree.command(name='remove_kklub', description= config["remove_kklub"])
@@ -212,6 +217,50 @@ async def check_pin_report_leaderboard(interaction: discord.Interaction):
                   description=config["reset_pin_reports"])
 async def reset_pin_reports(interaction: discord.Interaction):
     await reset_database(interaction, pin_database)
+
+#BLACKLIST CODE - for people abusing kklub bot
+
+@bot.tree.command(name="add_blacklist",
+                  description="It's in the name")
+@app_commands.describe(username="Who to add kklub")
+async def add_blacklist(interaction: discord.Interaction, username: str):
+    await interaction.response.defer()
+    roles = interaction.user.roles
+    permission = False
+    for role in roles:
+        if role.permissions.administrator:
+            permission = True
+            break
+
+    if not permission:
+        await interaction.followup.send('MUST HAVE ADMINISTRATIVE PERMISSION')
+        return
+    await add_row(interaction, username, blacklist_database, "Blacklist")
+
+@bot.tree.command(name='remove_blacklist', description= config["remove_kklub"])
+@app_commands.describe(username="Who to remove kklub")
+async def remove_blacklist(interaction: discord.Interaction, username: str):
+    await remove_row(interaction, username, blacklist_database, title = "Blacklist")
+    return
+
+@bot.tree.command(name="check_blacklist",
+                  description=config["check_kklubs"])
+async def check_blacklist(interaction: discord.Interaction):
+    await interaction.response.defer()
+    points = blacklist_database.get_user_point(interaction.user.id)
+    if(points == 0):
+        await interaction.followup.send("You are not on the blacklist")
+        return
+    await interaction.followup.send("You are on the blacklist for abusing the bot")
+
+@bot.tree.command(name="check_blacklist_board", description=config["check_kklub_leaderboard"])
+async def check_blacklist_board(interaction: discord.Interaction):
+    await leaderboard(interaction, database = blacklist_database, title = "Blacklist" )
+
+@bot.tree.command(name="reset_blacklist",
+                  description=config["reset_kklubs"])
+async def reset_blacklist(interaction: discord.Interaction):
+    await reset_database(interaction, blacklist_database)
 
 
 #GENERAL CODE
