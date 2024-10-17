@@ -11,10 +11,11 @@ config_file = open("config.json")
 config = json.load(config_file)
 
 bot.remove_command("help")
-
+# Set up databases
 pin_database = db.Database('pindiscodatabase.db')
 kklub_database = db.Database('kklubdiscodatabase.db')
 
+##create hooks so bot doesn't forget itself when it idles
 @bot.event
 async def setup_hook():
     try:
@@ -28,7 +29,7 @@ async def on_ready():
     print("KKlub Bot is running")
 
 
-##DATABASE CODE
+##DATABASE CODE - Stuff that gets reused a fuck ton
 async def remove_row(interaction: discord.Interaction, username: str, database: db.Database, title: str):
     await interaction.response.defer()
     roles = interaction.user.roles
@@ -70,7 +71,7 @@ async def add_row(interaction: discord.Interaction, username: str, database: db.
         from_server = interaction.guild
         user = from_server.get_member_named(username)
         if (user == None):
-            await interaction.followup.send("Invalid User")
+            await interaction.followup.send("Invalid User. Use the format @(Name of Person)")
             return
         else:
             database.add_points(str(user.id), 1)
@@ -120,14 +121,15 @@ async def get_user(interaction: discord.Interaction, username: str) -> discord.M
     username_id = username_id.replace("!", "")
 
     from_server = interaction.guild
-
+    if not username_id.isdigit():
+        return None
     user = from_server.get_member(int(username_id))
 
     return user
 
 
 
-# KKLUB CODE
+# KKLUB CODE - kklub commands
 @bot.tree.command(name="add_kklub",
                   description="It's in the name")
 @app_commands.describe(username="Who to add kklub")
@@ -169,7 +171,7 @@ async def add_pin_report(interaction: discord.Interaction, username: str):
 
     user = await get_user(interaction, username)
     if user is None:
-        await interaction.followup.send("Invalid User")
+        await interaction.followup.send("Invalid User. Use the format @(Name of Person)")
         return
     roles = [role.name for role in user.roles]
 
@@ -193,11 +195,11 @@ async def remove_pin_report(interaction: discord.Interaction, username: str):
 async def check_pin_report(interaction: discord.Interaction):
     await interaction.response.defer()
     user = interaction.user
-    for role in user.roles:
-        if(role.name == "Pledges"):
-            points = pin_database.get_user_point(interaction.user.id)
-            await interaction.followup.send("You have " + str(points) + " Pin Report(s)")
-            return
+    roles = [role.name for role in user.roles]
+    if roles.__contains__("Pledges"):
+        points = pin_database.get_user_point(interaction.user.id)
+        await interaction.followup.send("You have " + str(points) + " Pin Report(s)")
+        return
     await interaction.followup.send("Ur not a pledge Nerd")
 
 
