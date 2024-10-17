@@ -1,10 +1,9 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-import database
 import json
 import re
-from database import *
+import database as db
 
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 
@@ -13,50 +12,31 @@ config = json.load(config_file)
 
 bot.remove_command("help")
 
+pin_database = db.Database('pindiscodatabase.db')
+kklub_database = db.Database('kklubdiscodatabase.db')
 
 @bot.event
-async def on_ready():
-    print("Bot is running")
+async def setup_hook():
     try:
         synced = await bot.tree.sync()
         print("Synced Commands: " + str(synced))
     except Exception as e:
         print("Booooof Something went wrong")
 
-
-@bot.tree.command(name="add_kklub",
-                  description="It's in the name")
-@app_commands.describe(username="Who to add kklub")
-async def add_kklub(interaction: discord.Interaction, username: str):
-    await interaction.response.defer()
-    username_id = username[2:]
-    username_id = username_id[:-1]
-    username_id = username_id.replace("!", "")
-
-    if (username_id.isdigit()):
-        add_points(username_id, 1)
-    else:
-        from_server = interaction.guild
-        user = from_server.get_member_named(username)
-        if (user == None):
-            await interaction.followup.send("Invalid User")
-            return
-        else:
-            add_points(user.id, 1)
-    await interaction.followup.send(username + " has received a kklub")
+@bot.event
+async def on_ready():
+    print("KKlub Bot is running")
 
 
-@bot.tree.command(name='remove_kklub', description= "remove kklub from someone")
-@app_commands.describe(username="Who to remove kklub")
-async def remove_kklub(interaction: discord.Interaction, username: str):
+##DATABASE CODE
+async def remove_row(interaction: discord.Interaction, username: str, database: db.Database, title: str):
     await interaction.response.defer()
     roles = interaction.user.roles
     permission = False
     for role in roles:
-        if(role.permissions.administrator):
+        if (role.permissions.administrator):
             permission = True
             break
-
 
     if (not permission):
         await interaction.followup.send('No permission')
@@ -67,7 +47,7 @@ async def remove_kklub(interaction: discord.Interaction, username: str):
     username_id = username_id[:-1]
     username_id = username_id.replace("!", "")
     if (username_id.isdigit()):
-        remove_points(username_id, point)
+        database.remove_points(username_id, point)
     else:
         from_server = interaction.guild
         user = from_server.get_member_named(username)
@@ -75,25 +55,32 @@ async def remove_kklub(interaction: discord.Interaction, username: str):
             await interaction.followup.send("Invalid user")
             return
         else:
-            remove_points(user.id, point)
-    await interaction.followup.send("KKClub removed from " + str(username) + "!")
+            database.remove_points(user.id, point)
+    await interaction.followup.send(title + " removed from " + str(username) + "!")
 
+async def add_row(interaction: discord.Interaction, username: str, database: db.Database, title: str):
+    username = str(username)
+    username_id = username[2:]
+    username_id = username_id[:-1]
+    username_id = username_id.replace("!", "")
 
-@bot.tree.command(name="check_kklubs",
-                  description="Check how many kklub's you have")
-async def check_kklub(interaction: discord.Interaction):
+    if (username_id.isdigit()):
+        database.add_points(username_id, 1)
+    else:
+        from_server = interaction.guild
+        user = from_server.get_member_named(username)
+        if (user == None):
+            await interaction.followup.send("Invalid User")
+            return
+        else:
+            database.add_points(str(user.id), 1)
+    await interaction.followup.send(username + " has received a " + title + ".")
+
+async def leaderboard(interaction: discord.Interaction, database: db.Database, title: str):
     await interaction.response.defer()
-    points = get_user_point(interaction.user.id)
-    await interaction.followup.send("You have " + str(points) + " KKclub(s)")
-    return
+    rows = database.get_users(1)
 
-
-@bot.tree.command(name="check_leaderboard", description="kklub ranking (you don't want to be on this)")
-async def check_leaderboard(interaction: discord.Interaction):
-    await interaction.response.defer()
-    rows = get_users(1)
-
-    embed = discord.Embed(title="Leaderboard", color=0x8150bc)
+    embed = discord.Embed(title=title, color=0x8150bc)
     count = 1
 
     for row in rows:
@@ -108,27 +95,11 @@ async def check_leaderboard(interaction: discord.Interaction):
 
     await interaction.followup.send(embed=embed)
     msg_sent = interaction
-    add_leaderboard(interaction.user.id, msg_sent.id, count)
+    database.add_leaderboard(interaction.user.id, msg_sent.id, count)
     if (count == 11):
         await msg_sent.add_reaction(u"\u25B6")
 
-
-@bot.tree.command(name="help",
-                  description="If you need help")
-async def help(interaction: discord.Interaction):
-    await interaction.response.defer()
-    embed = discord.Embed(title="Help command list", color=0x8150bc)
-    embed.add_field(name="/check_leaderboard", value=config["leaderboard_help"], inline=False)
-    embed.add_field(name="/add_kklubs <username>", value=config["add_kklub"], inline=False)
-    embed.add_field(name="/remove_kklubs <username>", value=config["remove_kklub"], inline=False)
-    embed.add_field(name="/check_kklub", value=config["check_kklub"], inline=False)
-    embed.add_field(name="/help", value=config["help_help"], inline=False)
-    await interaction.followup.send(embed=embed)
-
-
-@bot.tree.command(name="reset",
-                  description="Check how many kklubs you have")
-async def reset(interaction: discord.Interaction):
+async def reset_database(interaction: discord.Interaction, database: db.Database):
     await interaction.response.defer()
     permission = False
     roles = interaction.user.roles
@@ -137,20 +108,148 @@ async def reset(interaction: discord.Interaction):
             permission = True
 
     if (permission):
-        await reset_database()
-        await interaction.followup.send("Database was rest!")
+        await database.reset_database()
+        await interaction.followup.send("Database was reset!")
     else:
-        await interaction.followup.send("No permision!")
+        await interaction.followup.send("No permission!")
+
+async def get_user(interaction: discord.Interaction, username: str) -> discord.Member:
+    username = str(username)
+    username_id = username[2:]
+    username_id = username_id[:-1]
+    username_id = username_id.replace("!", "")
+
+    from_server = interaction.guild
+
+    user = from_server.get_member(int(username_id))
+
+    return user
+
+
+
+# KKLUB CODE
+@bot.tree.command(name="add_kklub",
+                  description="It's in the name")
+@app_commands.describe(username="Who to add kklub")
+async def add_kklub(interaction: discord.Interaction, username: str):
+    await interaction.response.defer()
+    await add_row(interaction, username, kklub_database, "KKlub")
+
+@bot.tree.command(name='remove_kklub', description= config["remove_kklub"])
+@app_commands.describe(username="Who to remove kklub")
+async def remove_kklub(interaction: discord.Interaction, username: str):
+    await remove_row(interaction, username, kklub_database, title = "Kklub")
+    return
+
+@bot.tree.command(name="check_kklubs",
+                  description=config["check_kklubs"])
+async def check_kklub(interaction: discord.Interaction):
+    await interaction.response.defer()
+    points = kklub_database.get_user_point(interaction.user.id)
+    await interaction.followup.send("You have " + str(points) + " KKclub(s)")
+    return
+
+@bot.tree.command(name="check_kklub_leaderboard", description=config["check_kklub_leaderboard"])
+async def check_kklub_leaderboard(interaction: discord.Interaction):
+    await leaderboard(interaction, database = kklub_database, title = "KKlub Leaderboard" )
+
+@bot.tree.command(name="reset_kklubs",
+                  description=config["reset_kklubs"])
+async def reset_kklubs(interaction: discord.Interaction):
+    await reset_database(interaction, kklub_database)
+
+# PIN REPORT CODE
+
+
+@bot.tree.command(name="add_pin_report",
+                  description="It's in the name")
+@app_commands.describe(username="Who to pin Report")
+async def add_pin_report(interaction: discord.Interaction, username: str):
+    await interaction.response.defer()
+
+    user = await get_user(interaction, username)
+    if user is None:
+        await interaction.followup.send("Invalid User")
+        return
+    roles = [role.name for role in user.roles]
+
+    if not roles.__contains__("Pledges"):
+        await interaction.followup.send("Not a Pledge Nerd")
+        return
+
+    await add_row(interaction, username, pin_database, "Pin Violation")
+
+
+
+@bot.tree.command(name='remove_pin_report', description= config["remove_pin_report"])
+@app_commands.describe(username="Who to remove kklub")
+async def remove_pin_report(interaction: discord.Interaction, username: str):
+    await remove_row(interaction, username, pin_database, title = "Pin Violation")
+    return
+
+
+@bot.tree.command(name="check_pin_report",
+                  description=config["check_pin_report"])
+async def check_pin_report(interaction: discord.Interaction):
+    await interaction.response.defer()
+    user = interaction.user
+    for role in user.roles:
+        if(role.name == "Pledges"):
+            points = pin_database.get_user_point(interaction.user.id)
+            await interaction.followup.send("You have " + str(points) + " Pin Report(s)")
+            return
+    await interaction.followup.send("Ur not a pledge Nerd")
+
+
+
+@bot.tree.command(name="check_pin_report_leaderboard", description=config["check_pin_report_leaderboard"])
+async def check_pin_report_leaderboard(interaction: discord.Interaction):
+    await leaderboard(interaction, database=pin_database, title="Pin Report Leaderboard")
+
+@bot.tree.command(name="reset_pin_reports",
+                  description=config["reset_pin_reports"])
+async def reset_pin_reports(interaction: discord.Interaction):
+    await reset_database(interaction, pin_database)
+
+
+#GENERAL CODE
+@bot.tree.command(name="help",
+                  description=config["help"])
+async def help(interaction: discord.Interaction):
+    await interaction.response.defer()
+    embed = discord.Embed(title="Help command list", color=0x8150bc)
+    embed.add_field(name="KKlub Commands", value="", inline=False)
+    embed.add_field(name="/check_kklub_leaderboard", value=config["check_kklub_leaderboard"], inline=False)
+    embed.add_field(name="/add_kklubs <username>", value=config["add_kklub"], inline=False)
+    embed.add_field(name="/check_kklubs", value=config["check_kklubs"], inline=False)
+    embed.add_field(name="/remove_kklubs <username>", value=config["remove_kklub"], inline=False)
+    embed.add_field(name="/reset_kklubs", value=config["reset_kklubs"], inline=False)
+    embed.add_field(name="", value="", inline=False)
+
+    embed.add_field(name="Pin Report Commands", value="", inline=False)
+    embed.add_field(name="/check_pin_report_leaderboard", value=config["check_pin_report_leaderboard"], inline=False)
+    embed.add_field(name="/add_pin_report <username>", value=config["add_pin_report"], inline=False)
+    embed.add_field(name="/check_pin_report", value=config["check_pin_report"], inline=False)
+    embed.add_field(name="/remove_pin_report <username>", value=config["remove_pin_report"], inline=False)
+    embed.add_field(name="/reset_pin_reports", value=config["reset_pin_reports"], inline=False)
+    embed.add_field(name="", value="", inline=False)
+
+    embed.add_field(name="General Commands", value="", inline=False)
+    embed.add_field(name="/help", value=config["help"], inline=False)
+    await interaction.followup.send(embed=embed)
+
+
+
 
 
 @bot.event
 async def on_reaction_add(reaction, user):
-    if (check_leaderboard(reaction.message.id, user.id)):
+    if (kklub_database.check_leaderboard(reaction.message.id, user.id)):
         if (reaction.emoji == u"\u25B6"):
-            page, last_user_count = get_leaderboard_page(reaction.message.id, user.id)
+            page, last_user_count = kklub_database.get_leaderboard_page(reaction.message.id, user.id)
             if (last_user_count < page * 10):
                 return
-            rows = get_users(page + 1)
+            rows = kklub_database.get_users(page + 1)
             embed = discord.Embed(title="Leaderboard", color=0x8150bc)
             for row in rows:
 
@@ -160,7 +259,7 @@ async def on_reaction_add(reaction, user):
                     embed.add_field(name=user_name, value='{:,}'.format(row[2]), inline=False)
                     last_user_count += 1
 
-            update_leaderboard(page + 1, last_user_count, reaction.message.id)
+            kklub_database.update_leaderboard(page + 1, last_user_count, reaction.message.id)
             await reaction.message.edit(embed=embed)
             await reaction.message.clear_reactions()
             await reaction.message.add_reaction(u"\u25C0")
@@ -168,10 +267,10 @@ async def on_reaction_add(reaction, user):
                 await reaction.message.add_reaction(u"\u25B6")
 
         if (reaction.emoji == u"\u25C0"):
-            page, last_user_count = get_leaderboard_page(reaction.message.id, user.id)
+            page, last_user_count = kklub_database.get_leaderboard_page(reaction.message.id, user.id)
             if (page == 1):
                 return
-            rows = get_users(page - 1)
+            rows = kklub_database.get_users(page - 1)
             embed = discord.Embed(title="Leaderboard", color=0x8150bc)
             if (last_user_count <= page * 10):
                 last_user_count -= 10 + (last_user_count - 1) % 10
@@ -186,7 +285,7 @@ async def on_reaction_add(reaction, user):
                     embed.add_field(name=user_name, value='{:,}'.format(row[2]), inline=False)
                     last_user_count += 1
 
-            update_leaderboard(page - 1, last_user_count, reaction.message.id)
+            kklub_database.update_leaderboard(page - 1, last_user_count, reaction.message.id)
             await reaction.message.edit(embed=embed)
             await reaction.message.clear_reactions()
             if (page - 1 > 1):
@@ -202,115 +301,20 @@ async def on_reaction_add(reaction, user):
             if (role.name == "Manager" or role.permissions.administrator or role.name == "Exec Board Members"):
                 permission = True
 
-        if (permission and check_requests(reaction.message.id) and not user.bot):
-            users, points = get_users_requests(reaction.message.id)
+        if (permission and kklub_database.check_requests(reaction.message.id) and not user.bot):
+            users, points = kklub_database.get_users_requests(reaction.message.id)
             split_users = users.split()
             for user_id in split_users:
-                add_points(user_id, points)
+                kklub_database.add_points(user_id, points)
 
-            update_requests(reaction.message.id, 1)
+            kklub_database.update_requests(reaction.message.id, 1)
             await reaction.message.add_reaction('\U00002705')
-
-
-# @bot.command(pass_context = True)
-# async def kkclub(ctx, command = None, username = None, point = 1):
-#     #print(username)
-#     if(command == None or username == None):
-#         if(command == None and username == None):
-#             points = get_user_point(ctx.message.author.id)
-#             await ctx.send("You have " + str(points) + " KKclub(s)")
-#             return
-#         else:
-#             await ctx.send("Invalid command, please check the documentation: \n!kkclub [add/remove] <username> <points>")
-#             return
-#
-#     roles = ctx.message.author.roles
-#     permission = True
-#
-#     for role in roles:
-#         if(role.name == "Manager" or role.permissions.administrator):
-#             permission = True
-#
-#     if(not permission):
-#         await request_points(ctx)
-#         #await ctx.send("No permission")
-#         return
-#
-#     if(command.lower() == "add"):
-#
-#             username_id = username[2:]
-#             username_id = username_id[:-1]
-#             username_id = username_id.replace("!","")
-#
-#
-#             if(username_id.isdigit()):
-#                 add_points(username_id, 1)
-#             else:
-#                 from_server = ctx.guild
-#                 user = from_server.get_member_named(username)
-#                 if(user == None):
-#                     await ctx.send("Invalid user")
-#                     return
-#                 else:
-#                     add_points(user.id, 1)
-#             await ctx.send("KKlub added!")
-#
-#     else:
-#         if(command.lower() == "remove"):
-#
-#                 username_id = username[2:]
-#                 username_id = username_id[:-1]
-#                 username_id = username_id.replace("!","")
-#                 if(username_id.isdigit()):
-#                     remove_points(username_id, point)
-#                 else:
-#                     from_server = ctx.guild
-#                     user = from_server.get_member_named(username)
-#                     if(user == None):
-#                         await ctx.send("Invalid user")
-#                         return
-#                     else:
-#                         remove_points(user.id,point)
-#                 await ctx.send("KKClub removed!")
-#
-#         else:
-#             await ctx.send("Invalid command, please check the documentation: \n!points [add/remove] <username> <points>")
-#
-
-# @bot.command(pass_context = True)
-# async def help(ctx):
-#     embed = discord.Embed(title = "Help command list", color=0x8150bc)
-#     embed.add_field(name = "!leaderboard", value = config["leaderboard_help"], inline = False)
-#     embed.add_field(name = "!kkclubs", value = config["points_help"], inline = False)
-#     embed.add_field(name = "!help", value = config["help_help"], inline = False)
-#     await ctx.send(embed = embed)
-
-
-
-# @bot.command(pass_context = True)
-# async def leaderboard(ctx):
-#     rows = get_users(1)
-#     embed = discord.Embed(title = "Leaderboard", color=0x8150bc)
-#     count = 1
-#     for row in rows:
-#         if(row[1] != None and row[2] != None):
-#             user = bot.get_user(int(row[1]))
-#             user = "#" + str(count) + " | " + str(user)
-#             embed.add_field(name = user, value = '{:,}'.format(row[2]), inline=False)
-#             count += 1
-#
-#     msg_sent = await ctx.send(embed=embed)
-#     add_leaderboard(ctx.message.author.id, msg_sent.id, count)
-#     if(count == 11):
-#         await msg_sent.add_reaction(u"\u25B6")
-#
-
 
 
 @bot.event
 async def on_message_edit(before, after):
-    if (check_requests(after.id)):
-        update_requests(after.id, -1)
+    if (kklub_database.check_requests(after.id)):
+        kklub_database.update_requests(after.id, -1)
 
 
 @bot.event
@@ -416,15 +420,17 @@ async def request_points(interaction: discord.Interaction):
                 saved_users += str(user_id.id)
                 saved_users += ' '
 
-        insert_points_requests(interaction.message.id, saved_users, split_message[len(split_message) - 1], 0,
+        kklub_database.insert_points_requests(interaction.message.id, saved_users, split_message[len(split_message) - 1], 0,
                                interaction.message.author.id)
 
         users_req = saved_users.split()
         for user in users_req:
-            add_points(user, 1)
+            kklub_database.add_points(user, 1)
 
         await interaction.followup.send("KKClub added")
 
 
 
 bot.run(config["bot_token"])
+
+

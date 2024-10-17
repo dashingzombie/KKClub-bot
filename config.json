@@ -1,10 +1,16 @@
 {
 
-"leaderboard_help" : "Show points of every user",
+"check_kklub_leaderboard" : "Show kklubs of every user",
 "add_kklub" : "REPORT A KKLUB VIOLATION",
-"remove_kklub":"remove kklub for a user" ,
-"check_kklub":"checks how many kklubs you have (hopefully it's zero)" ,
-"help_help" : "Show all command and description",
+"remove_kklub":"remove kklub for a user <ADMINISTRATOR>" ,
+"check_kklubs":"checks how many kklubs you have (hopefully it's zero)" ,
+"reset_kklubs":"resets KKlub Database <ADMINISTRATOR>" ,
+"help" : "Show all command and description",
+"check_pin_report_leaderboard" : "Show pin reports of every Pledge",
+"add_pin_report" : "REPORT A PIN VIOLATION",
+"remove_pin_report":"remove pin report for a Pledge <ADMINISTRATOR>" ,
+"check_pin_report":"checks how many pin reports you have (hopefully it's zero)" ,
+"reset_pin_reports":"resets Pin Report Database <ADMINISTRATOR>" ,
 "bot_token" : ""
 
 }
