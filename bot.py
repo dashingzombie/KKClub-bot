@@ -53,7 +53,7 @@ async def remove_row(interaction: discord.Interaction, username: str, database: 
         from_server = interaction.guild
         user = from_server.get_member_named(username)
         if (user == None):
-            await interaction.followup.send("Invalid user")
+            await interaction.followup.send("Invalid User. Use the format @(Name of Person)")
             return
         else:
             database.remove_points(user.id, point)
