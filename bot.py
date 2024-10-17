@@ -76,7 +76,7 @@ async def add_row(interaction: discord.Interaction, username: str, database: db.
             return
         else:
             database.add_points(str(user.id), 1)
-    await interaction.followup.send(username + " has received a " + title + ".")
+    await interaction.followup.send(username + " has " + title + ".")
 
 async def leaderboard(interaction: discord.Interaction, database: db.Database, title: str):
     await interaction.response.defer()
@@ -140,7 +140,7 @@ async def add_kklub(interaction: discord.Interaction, username: str):
     if points > 0:
         await interaction.followup.send("You are not allowed to kklub someone")
         return
-    await add_row(interaction, username, kklub_database, "KKlub")
+    await add_row(interaction, username, kklub_database, "been KKlubed")
 
 @bot.tree.command(name='remove_kklub', description= config["remove_kklub"])
 @app_commands.describe(username="Who to remove kklub")
@@ -184,7 +184,7 @@ async def add_pin_report(interaction: discord.Interaction, username: str):
         await interaction.followup.send("Not a Pledge Nerd")
         return
 
-    await add_row(interaction, username, pin_database, "Pin Violation")
+    await add_row(interaction, username, pin_database, "received a PIN VIOLATION")
 
 
 
@@ -220,10 +220,10 @@ async def reset_pin_reports(interaction: discord.Interaction):
 
 #BLACKLIST CODE - for people abusing kklub bot
 
-@bot.tree.command(name="add_blacklist",
-                  description="It's in the name")
-@app_commands.describe(username="Who to add kklub")
-async def add_blacklist(interaction: discord.Interaction, username: str):
+@bot.tree.command(name="add_shame",
+                  description= config["add_blacklist"])
+@app_commands.describe(username="Who to add shame")
+async def add_shame(interaction: discord.Interaction, username: str):
     await interaction.response.defer()
     roles = interaction.user.roles
     permission = False
@@ -235,17 +235,23 @@ async def add_blacklist(interaction: discord.Interaction, username: str):
     if not permission:
         await interaction.followup.send('MUST HAVE ADMINISTRATIVE PERMISSION')
         return
-    await add_row(interaction, username, blacklist_database, "Blacklist")
+    user = await get_user(interaction, username)
+    points = blacklist_database.get_user_point(user.id)
+    if points > 0:
+        await interaction.followup.send(username + " is already shammed")
+        return
 
-@bot.tree.command(name='remove_blacklist', description= config["remove_kklub"])
-@app_commands.describe(username="Who to remove kklub")
-async def remove_blacklist(interaction: discord.Interaction, username: str):
+    await add_row(interaction, username, blacklist_database, " HAS BEEN SHAMMED")
+
+@bot.tree.command(name='remove_shame', description= config["remove_blacklist"])
+@app_commands.describe(username="Who to remove shame")
+async def remove_shame(interaction: discord.Interaction, username: str):
     await remove_row(interaction, username, blacklist_database, title = "Blacklist")
     return
 
-@bot.tree.command(name="check_blacklist",
-                  description=config["check_kklubs"])
-async def check_blacklist(interaction: discord.Interaction):
+@bot.tree.command(name="check_shame",
+                  description=config["check_blacklist"])
+async def check_shame(interaction: discord.Interaction):
     await interaction.response.defer()
     points = blacklist_database.get_user_point(interaction.user.id)
     if(points == 0):
@@ -253,13 +259,13 @@ async def check_blacklist(interaction: discord.Interaction):
         return
     await interaction.followup.send("You are on the blacklist for abusing the bot")
 
-@bot.tree.command(name="check_blacklist_board", description=config["check_kklub_leaderboard"])
-async def check_blacklist_board(interaction: discord.Interaction):
-    await leaderboard(interaction, database = blacklist_database, title = "Blacklist" )
+@bot.tree.command(name="wall_of_shame", description=config["wall_of_shame"])
+async def wall_of_shame(interaction: discord.Interaction):
+    await leaderboard(interaction, database = blacklist_database, title = "WALL OF SHAME" )
 
-@bot.tree.command(name="reset_blacklist",
-                  description=config["reset_kklubs"])
-async def reset_blacklist(interaction: discord.Interaction):
+@bot.tree.command(name="reset_shame_database",
+                  description=config["reset_blacklist"])
+async def reset_shame_database(interaction: discord.Interaction):
     await reset_database(interaction, blacklist_database)
 
 
@@ -284,6 +290,15 @@ async def help(interaction: discord.Interaction):
     embed.add_field(name="/remove_pin_report <username>", value=config["remove_pin_report"], inline=False)
     embed.add_field(name="/reset_pin_reports", value=config["reset_pin_reports"], inline=False)
     embed.add_field(name="", value="", inline=False)
+
+    embed.add_field(name="Shame", value="", inline=False)
+    embed.add_field(name="/add_shame <username>", value=config["add_blacklist"], inline=False)
+    embed.add_field(name="/remove_shame <username>", value=config["remove_blacklist"], inline=False)
+    embed.add_field(name="/check_shame", value=config["check_blacklist"], inline=False)
+    embed.add_field(name="/wall_of_shame ", value=config["wall_of_shame"], inline=False)
+    embed.add_field(name="/reset_shame_database", value=config["reset_blacklist"], inline=False)
+    embed.add_field(name="", value="", inline=False)
+
 
     embed.add_field(name="General Commands", value="", inline=False)
     embed.add_field(name="/help", value=config["help"], inline=False)
