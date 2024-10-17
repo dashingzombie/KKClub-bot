@@ -255,9 +255,9 @@ async def check_shame(interaction: discord.Interaction):
     await interaction.response.defer()
     points = blacklist_database.get_user_point(interaction.user.id)
     if(points == 0):
-        await interaction.followup.send("You are not on the blacklist")
+        await interaction.followup.send("You have no Shame")
         return
-    await interaction.followup.send("You are on the blacklist for abusing the bot")
+    await interaction.followup.send("SHAME ON YOU " + interaction.user.mention)
 
 @bot.tree.command(name="wall_of_shame", description=config["wall_of_shame"])
 async def wall_of_shame(interaction: discord.Interaction):
