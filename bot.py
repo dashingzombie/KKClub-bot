@@ -88,7 +88,7 @@ async def leaderboard(interaction: discord.Interaction, database: db.Database, t
     for row in rows:
         if (row[1] != None and row[2] != None):
             user = bot.get_user(int(row[1]))
-            if user == None:
+            if user is None:
                 continue
             user = interaction.guild.get_member(user.id).display_name
             user = "#" + str(count) + " | " + str(user)
@@ -347,6 +347,7 @@ async def on_reaction_add(reaction, user):
 
                 if(row[1] != None and row[2] != None):
                     user_name = user.guild.get_member(int(row[1])).display_name
+
                     user_name = "#" + str(last_user_count) + " | " + str(user_name)
                     embed.add_field(name=user_name, value='{:,}'.format(row[2]), inline=False)
                     last_user_count += 1
