@@ -11,6 +11,6 @@
 "remove_pin_report":"remove pin report for a Pledge <ADMINISTRATOR>" ,
 "check_pin_report":"checks how many pin reports you have (hopefully it's zero)" ,
 "reset_pin_reports":"resets Pin Report Database <ADMINISTRATOR>" ,
-"bot_token" : "Njc2NTQ3MjQ1NzQ2OTQ2MDQ5.Gs2ahx.HRFdkAHh3fw63-IC4gXD_qDKRTsABYX6LDLOVg"
+"bot_token" : ""
 
 }
