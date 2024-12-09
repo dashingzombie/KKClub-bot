@@ -1,3 +1,6 @@
+import sqlite3
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -14,6 +17,8 @@ bot.remove_command("help")
 # Set up databases
 pin_database = db.Database('pindiscodatabase.db')
 kklub_database = db.Database('kklubdiscodatabase.db')
+blacklist_database = db.Database('blacklist_database.db')
+
 
 ##create hooks so bot doesn't forget itself when it idles
 @bot.event
@@ -75,30 +80,35 @@ async def add_row(interaction: discord.Interaction, username: str, database: db.
             return
         else:
             database.add_points(str(user.id), 1)
-    await interaction.followup.send(username + " has received a " + title + ".")
+    await interaction.followup.send(username + " has " + title + ".")
 
 async def leaderboard(interaction: discord.Interaction, database: db.Database, title: str):
     await interaction.response.defer()
+
     rows = database.get_users(1)
+    entries_per_embed = 25  # Maximum fields per embed
+    count = 1  # Counter for ranking
 
-    embed = discord.Embed(title=title, color=0x8150bc)
-    count = 1
+    for start in range(0, len(rows), entries_per_embed):
+        # Create a new embed for every chunk of 25 entries
+        embed = discord.Embed(title=title, color=0x8150bc)
+        for row in rows[start:start + entries_per_embed]:
+            if row[1] is not None and row[2] is not None:
+                user = bot.get_user(int(row[1]))
+                if user is None:
+                    continue
+                member = interaction.guild.get_member(user.id)
+                if member is None:
+                    continue
+                display_name = member.display_name
+                user_text = f"#{count} | {display_name}"
+                embed.add_field(name=user_text, value=f'{row[2]:,}', inline=False)
+                count += 1
 
-    for row in rows:
-        if (row[1] != None and row[2] != None):
-            user = bot.get_user(int(row[1]))
-            if user == None:
-                continue
-            user = interaction.guild.get_member(user.id).display_name
-            user = "#" + str(count) + " | " + str(user)
-            embed.add_field(name=user, value='{:,}'.format(row[2]), inline=False)
-            count += 1
+        # Send the current embed as a new message
+        await interaction.followup.send(embed=embed)
 
-    await interaction.followup.send(embed=embed)
-    msg_sent = interaction
-    database.add_leaderboard(interaction.user.id, msg_sent.id, count)
-    if (count == 11):
-        await msg_sent.add_reaction(u"\u25B6")
+
 
 async def reset_database(interaction: discord.Interaction, database: db.Database):
     await interaction.response.defer()
@@ -135,7 +145,11 @@ async def get_user(interaction: discord.Interaction, username: str) -> discord.M
 @app_commands.describe(username="Who to add kklub")
 async def add_kklub(interaction: discord.Interaction, username: str):
     await interaction.response.defer()
-    await add_row(interaction, username, kklub_database, "KKlub")
+    points = blacklist_database.get_user_point(interaction.user.id)
+    if points > 0:
+        await interaction.followup.send("You are not allowed to kklub someone")
+        return
+    await add_row(interaction, username, kklub_database, "been KKlubed")
 
 @bot.tree.command(name='remove_kklub', description= config["remove_kklub"])
 @app_commands.describe(username="Who to remove kklub")
@@ -179,7 +193,7 @@ async def add_pin_report(interaction: discord.Interaction, username: str):
         await interaction.followup.send("Not a Pledge Nerd")
         return
 
-    await add_row(interaction, username, pin_database, "Pin Violation")
+    await add_row(interaction, username, pin_database, "received a PIN VIOLATION")
 
 
 
@@ -213,6 +227,56 @@ async def check_pin_report_leaderboard(interaction: discord.Interaction):
 async def reset_pin_reports(interaction: discord.Interaction):
     await reset_database(interaction, pin_database)
 
+#BLACKLIST CODE - for people abusing kklub bot
+
+@bot.tree.command(name="add_shame",
+                  description= config["add_blacklist"])
+@app_commands.describe(username="Who to add shame")
+async def add_shame(interaction: discord.Interaction, username: str):
+    await interaction.response.defer()
+    roles = interaction.user.roles
+    permission = False
+    for role in roles:
+        if role.permissions.administrator:
+            permission = True
+            break
+
+    if not permission:
+        await interaction.followup.send('MUST HAVE ADMINISTRATIVE PERMISSION')
+        return
+    user = await get_user(interaction, username)
+    points = blacklist_database.get_user_point(user.id)
+    if points > 0:
+        await interaction.followup.send(username + " is already shammed")
+        return
+
+    await add_row(interaction, username, blacklist_database, " HAS BEEN SHAMMED")
+
+@bot.tree.command(name='remove_shame', description= config["remove_blacklist"])
+@app_commands.describe(username="Who to remove shame")
+async def remove_shame(interaction: discord.Interaction, username: str):
+    await remove_row(interaction, username, blacklist_database, title = "Blacklist")
+    return
+
+@bot.tree.command(name="check_shame",
+                  description=config["check_blacklist"])
+async def check_shame(interaction: discord.Interaction):
+    await interaction.response.defer()
+    points = blacklist_database.get_user_point(interaction.user.id)
+    if(points == 0):
+        await interaction.followup.send("You have no Shame")
+        return
+    await interaction.followup.send("SHAME ON YOU " + interaction.user.mention)
+
+@bot.tree.command(name="wall_of_shame", description=config["wall_of_shame"])
+async def wall_of_shame(interaction: discord.Interaction):
+    await leaderboard(interaction, database = blacklist_database, title = "WALL OF SHAME" )
+
+@bot.tree.command(name="reset_shame_database",
+                  description=config["reset_blacklist"])
+async def reset_shame_database(interaction: discord.Interaction):
+    await reset_database(interaction, blacklist_database)
+
 
 #GENERAL CODE
 @bot.tree.command(name="help",
@@ -236,12 +300,18 @@ async def help(interaction: discord.Interaction):
     embed.add_field(name="/reset_pin_reports", value=config["reset_pin_reports"], inline=False)
     embed.add_field(name="", value="", inline=False)
 
+    embed.add_field(name="Shame", value="", inline=False)
+    embed.add_field(name="/add_shame <username>", value=config["add_blacklist"], inline=False)
+    embed.add_field(name="/remove_shame <username>", value=config["remove_blacklist"], inline=False)
+    embed.add_field(name="/check_shame", value=config["check_blacklist"], inline=False)
+    embed.add_field(name="/wall_of_shame ", value=config["wall_of_shame"], inline=False)
+    embed.add_field(name="/reset_shame_database", value=config["reset_blacklist"], inline=False)
+    embed.add_field(name="", value="", inline=False)
+
+
     embed.add_field(name="General Commands", value="", inline=False)
     embed.add_field(name="/help", value=config["help"], inline=False)
     await interaction.followup.send(embed=embed)
-
-
-
 
 
 @bot.event
@@ -283,6 +353,7 @@ async def on_reaction_add(reaction, user):
 
                 if(row[1] != None and row[2] != None):
                     user_name = user.guild.get_member(int(row[1])).display_name
+
                     user_name = "#" + str(last_user_count) + " | " + str(user_name)
                     embed.add_field(name=user_name, value='{:,}'.format(row[2]), inline=False)
                     last_user_count += 1

@@ -88,7 +88,7 @@ class Database():
 
     def get_users(self,page=1):
         page_offset = (page - 1) * 10
-        self.cur.execute("SELECT * FROM users ORDER BY points DESC LIMIT " + str(page_offset) + ",10")
+        self.cur.execute("SELECT * FROM users ORDER BY points DESC LIMIT " + str(page_offset) + ",60")
         rows = self.cur.fetchall()
         return rows
 

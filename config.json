@@ -11,6 +11,11 @@
 "remove_pin_report":"remove pin report for a Pledge <ADMINISTRATOR>" ,
 "check_pin_report":"checks how many pin reports you have (hopefully it's zero)" ,
 "reset_pin_reports":"resets Pin Report Database <ADMINISTRATOR>" ,
+"add_blacklist": "Add a person making false kklub reports  <ADMINISTRATOR>",
+"remove_blacklist": "Remove person from the WALL OF SHAME  <ADMINISTRATOR>",
+"check_blacklist": "To see if you're on the WALL OF SHAME (hopefully not)",
+"wall_of_shame": "The wall of shame",
+"reset_blacklist": "reset the WALL OF SHAME database <ADMINISTRATOR>",
 "bot_token" : ""
 
 }
