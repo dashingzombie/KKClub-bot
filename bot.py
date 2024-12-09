@@ -1,3 +1,6 @@
+import sqlite3
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -15,6 +18,7 @@ bot.remove_command("help")
 pin_database = db.Database('pindiscodatabase.db')
 kklub_database = db.Database('kklubdiscodatabase.db')
 blacklist_database = db.Database('blacklist_database.db')
+
 
 ##create hooks so bot doesn't forget itself when it idles
 @bot.event
@@ -80,26 +84,31 @@ async def add_row(interaction: discord.Interaction, username: str, database: db.
 
 async def leaderboard(interaction: discord.Interaction, database: db.Database, title: str):
     await interaction.response.defer()
+
     rows = database.get_users(1)
+    entries_per_embed = 25  # Maximum fields per embed
+    count = 1  # Counter for ranking
 
-    embed = discord.Embed(title=title, color=0x8150bc)
-    count = 1
+    for start in range(0, len(rows), entries_per_embed):
+        # Create a new embed for every chunk of 25 entries
+        embed = discord.Embed(title=title, color=0x8150bc)
+        for row in rows[start:start + entries_per_embed]:
+            if row[1] is not None and row[2] is not None:
+                user = bot.get_user(int(row[1]))
+                if user is None:
+                    continue
+                member = interaction.guild.get_member(user.id)
+                if member is None:
+                    continue
+                display_name = member.display_name
+                user_text = f"#{count} | {display_name}"
+                embed.add_field(name=user_text, value=f'{row[2]:,}', inline=False)
+                count += 1
 
-    for row in rows:
-        if (row[1] != None and row[2] != None):
-            user = bot.get_user(int(row[1]))
-            if user is None:
-                continue
-            user = interaction.guild.get_member(user.id).display_name
-            user = "#" + str(count) + " | " + str(user)
-            embed.add_field(name=user, value='{:,}'.format(row[2]), inline=False)
-            count += 1
+        # Send the current embed as a new message
+        await interaction.followup.send(embed=embed)
 
-    await interaction.followup.send(embed=embed)
-    msg_sent = interaction
-    database.add_leaderboard(interaction.user.id, msg_sent.id, count)
-    if (count == 11):
-        await msg_sent.add_reaction(u"\u25B6")
+
 
 async def reset_database(interaction: discord.Interaction, database: db.Database):
     await interaction.response.defer()
@@ -303,9 +312,6 @@ async def help(interaction: discord.Interaction):
     embed.add_field(name="General Commands", value="", inline=False)
     embed.add_field(name="/help", value=config["help"], inline=False)
     await interaction.followup.send(embed=embed)
-
-
-
 
 
 @bot.event
