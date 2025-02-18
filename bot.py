@@ -7,8 +7,9 @@ from discord.ext import commands
 import json
 import re
 import database as db
-# Pledges:
+# Rachith Anasuri's Pledges:
 # Usman Mohammed, Computer Science and Political Science, Pledging Spring 2025
+# Nathan Novak, Mechanical Engineering, Pledging Spring 2025
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 
 config_file = open("config.json")
